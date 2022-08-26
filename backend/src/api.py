@@ -29,6 +29,7 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks', methods=['GET'])
+@require_auth('get:drinks')
 def get_drinks():
     drinks = Drink.query.all()
     return jsonify({
@@ -67,12 +68,8 @@ def get_drinks_details(payload):
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
 def post_drink(payload):
-    body = request.get_json()
-    drink = Drink()
-    drink.title = body['title']
-    drink.recipe = json.dumps(body['recipe'])
-    print(drink.title, file=sys.stderr)
-    print(drink.recipe, file=sys.stderr)
+    drink = Drink(title=request.get_json()['title'], recipe=request.get_json()['recipe'])
+
     try:
         drink.insert()
         return jsonify({
@@ -99,7 +96,7 @@ def post_drink(payload):
 @requires_auth('patch:drinks')
 def update_drink(payload, drink_id):
     body = request.get_json()
-    drink_to_update = Drink.query.filter(Drink.id == drink_id).one_or_none()
+    drink_to_update = Drink.query.get(drink_id)
 
     #if not existing - 404 error
     if drink_to_update is None:
@@ -140,7 +137,7 @@ def update_drink(payload, drink_id):
 @requires_auth('delete:drinks')
 def delete_drink(payload, drink_id):
     try:
-        drink_to_delete = Drink.query.filter(Drink.id == drink_id).one_or_none()
+        drink_to_delete = Drink.query.get(drink_id)
 
         #if not existing - 404 error
         if drink_to_delete is None:
